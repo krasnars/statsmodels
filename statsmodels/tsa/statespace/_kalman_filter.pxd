@@ -19,8 +19,7 @@ cdef int FILTER_UNIVARIATE       # ibid., Chapter 6.4
 cdef int FILTER_COLLAPSED        # ibid., Chapter 6.5
 cdef int FILTER_EXTENDED         # ibid., Chapter 10.2
 cdef int FILTER_UNSCENTED        # ibid., Chapter 10.3
-cdef int SMOOTHER_CLASSICAL      # ibid., Chapter 4.6.1
-cdef int SMOOTHER_ALTERNATIVE    # 
+cdef int FILTER_CONCENTRATED     # Harvey (1989), Chapter 3.4
 
 # ### Inversion methods
 # Methods by which the terms using the inverse of the forecast error
@@ -76,7 +75,7 @@ cdef class sKalmanFilter(object):
     cdef readonly int loglikelihood_burn
 
     # ### Kalman filter properties
-    cdef readonly np.float32_t [:] loglikelihood
+    cdef readonly np.float32_t [:] loglikelihood, scale
     cdef readonly np.float32_t [::1,:] filtered_state, predicted_state, forecast, forecast_error, standardized_forecast_error
     cdef readonly np.float32_t [::1,:,:] filtered_state_cov, predicted_state_cov, forecast_error_cov
     cdef readonly np.float32_t [::1,:,:] kalman_gain
@@ -125,6 +124,7 @@ cdef class sKalmanFilter(object):
 
     cdef np.float32_t * _kalman_gain
     cdef np.float32_t * _loglikelihood
+    cdef np.float32_t * _scale
 
     cdef np.float32_t * _converged_forecast_error_cov
     cdef np.float32_t * _converged_filtered_state_cov
@@ -154,6 +154,9 @@ cdef class sKalmanFilter(object):
     )
     cdef np.float32_t (*calculate_loglikelihood)(
         sKalmanFilter, sStatespace, np.float32_t
+    )
+    cdef np.float32_t (*calculate_scale)(
+        sKalmanFilter, sStatespace
     )
     cdef int (*prediction)(
         sKalmanFilter, sStatespace
@@ -202,7 +205,7 @@ cdef class dKalmanFilter(object):
     cdef readonly int loglikelihood_burn
 
     # ### Kalman filter properties
-    cdef readonly np.float64_t [:] loglikelihood
+    cdef readonly np.float64_t [:] loglikelihood, scale
     cdef readonly np.float64_t [::1,:] filtered_state, predicted_state, forecast, forecast_error, standardized_forecast_error
     cdef readonly np.float64_t [::1,:,:] filtered_state_cov, predicted_state_cov, forecast_error_cov
     cdef readonly np.float64_t [::1,:,:] kalman_gain
@@ -251,6 +254,7 @@ cdef class dKalmanFilter(object):
 
     cdef np.float64_t * _kalman_gain
     cdef np.float64_t * _loglikelihood
+    cdef np.float64_t * _scale
 
     cdef np.float64_t * _converged_forecast_error_cov
     cdef np.float64_t * _converged_filtered_state_cov
@@ -280,6 +284,9 @@ cdef class dKalmanFilter(object):
     )
     cdef np.float64_t (*calculate_loglikelihood)(
         dKalmanFilter, dStatespace, np.float64_t
+    )
+    cdef np.float64_t (*calculate_scale)(
+        dKalmanFilter, dStatespace
     )
     cdef int (*prediction)(
         dKalmanFilter, dStatespace
@@ -328,7 +335,7 @@ cdef class cKalmanFilter(object):
     cdef readonly int loglikelihood_burn
 
     # ### Kalman filter properties
-    cdef readonly np.complex64_t [:] loglikelihood
+    cdef readonly np.complex64_t [:] loglikelihood, scale
     cdef readonly np.complex64_t [::1,:] filtered_state, predicted_state, forecast, forecast_error, standardized_forecast_error
     cdef readonly np.complex64_t [::1,:,:] filtered_state_cov, predicted_state_cov, forecast_error_cov
     cdef readonly np.complex64_t [::1,:,:] kalman_gain
@@ -377,6 +384,7 @@ cdef class cKalmanFilter(object):
 
     cdef np.complex64_t * _kalman_gain
     cdef np.complex64_t * _loglikelihood
+    cdef np.complex64_t * _scale
 
     cdef np.complex64_t * _converged_forecast_error_cov
     cdef np.complex64_t * _converged_filtered_state_cov
@@ -406,6 +414,9 @@ cdef class cKalmanFilter(object):
     )
     cdef np.complex64_t (*calculate_loglikelihood)(
         cKalmanFilter, cStatespace, np.complex64_t
+    )
+    cdef np.complex64_t (*calculate_scale)(
+        cKalmanFilter, cStatespace
     )
     cdef int (*prediction)(
         cKalmanFilter, cStatespace
@@ -454,7 +465,7 @@ cdef class zKalmanFilter(object):
     cdef readonly int loglikelihood_burn
 
     # ### Kalman filter properties
-    cdef readonly np.complex128_t [:] loglikelihood
+    cdef readonly np.complex128_t [:] loglikelihood, scale
     cdef readonly np.complex128_t [::1,:] filtered_state, predicted_state, forecast, forecast_error, standardized_forecast_error
     cdef readonly np.complex128_t [::1,:,:] filtered_state_cov, predicted_state_cov, forecast_error_cov
     cdef readonly np.complex128_t [::1,:,:] kalman_gain
@@ -503,6 +514,7 @@ cdef class zKalmanFilter(object):
 
     cdef np.complex128_t * _kalman_gain
     cdef np.complex128_t * _loglikelihood
+    cdef np.complex128_t * _scale
 
     cdef np.complex128_t * _converged_forecast_error_cov
     cdef np.complex128_t * _converged_filtered_state_cov
@@ -532,6 +544,9 @@ cdef class zKalmanFilter(object):
     )
     cdef np.complex128_t (*calculate_loglikelihood)(
         zKalmanFilter, zStatespace, np.complex128_t
+    )
+    cdef np.complex128_t (*calculate_scale)(
+        zKalmanFilter, zStatespace
     )
     cdef int (*prediction)(
         zKalmanFilter, zStatespace
