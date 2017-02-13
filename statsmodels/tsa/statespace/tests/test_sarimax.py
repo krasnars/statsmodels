@@ -2021,7 +2021,6 @@ def test_predict_custom_index():
 
 
 def test_arima000():
-    from statsmodels.tsa.statespace.tools import compatibility_mode
 
     # Test an ARIMA(0,0,0) with measurement error model (i.e. just estimating
     # a variance term)
@@ -2049,7 +2048,7 @@ def test_arima000():
 
     # We need univariate filtering here, to guarantee we won't hit singular
     # forecast error covariance matrices.
-    if compatibility_mode:
+    if tools.compatibility_mode:
         return
 
     # OLS
@@ -2145,13 +2144,16 @@ def check_concentrated_scale(filter_univariate=False):
         if kwargs['measurement_error']:
             k_snr += 1
 
+        atol = 1e-5
+        if kwargs['seasonal_order'] == seasonal_orders[1] or kwargs['measurement_error']:
+            atol = 1e-3
+
         orig_params = np.r_[orig_params[:-k_snr],
                             res_conc.scale * orig_params[-k_snr:]]
         res_orig = mod_orig.smooth(orig_params)
 
         # Test loglike
         # Need to reduce the tolerance when we have measurement error.
-        atol = 1e-5 if kwargs['measurement_error'] else 0
         assert_allclose(res_conc.llf, res_orig.llf, atol=atol)
 
         # Test state space representation matrices
@@ -2171,7 +2173,7 @@ def check_concentrated_scale(filter_univariate=False):
         for name in filter_attr:
             actual = getattr(res_conc.filter_results, name)
             desired = getattr(res_orig.filter_results, name)
-            assert_allclose(actual, desired, atol=1e-4)
+            assert_allclose(actual, desired, atol=atol)
 
         # Note: don't want to compare the elements from any diffuse
         # initialization for things like covariances, so only compare for
@@ -2183,7 +2185,7 @@ def check_concentrated_scale(filter_univariate=False):
         for name in filter_attr_burn:
             actual = getattr(res_conc.filter_results, name)[..., d:]
             desired = getattr(res_orig.filter_results, name)[..., d:]
-            assert_allclose(actual, desired, atol=1e-4)
+            assert_allclose(actual, desired, atol=atol)
 
         smoothed_attr = ['smoothed_state', 'smoothed_state_cov',
                          'smoothed_state_autocov',
@@ -2199,15 +2201,16 @@ def check_concentrated_scale(filter_univariate=False):
         for name in smoothed_attr:
             actual = getattr(res_conc.filter_results, name)
             desired = getattr(res_orig.filter_results, name)
-            assert_allclose(actual, desired, atol=1e-3)
+            assert_allclose(actual, desired, atol=atol)
 
 
 def test_concentrated_scale_conventional():
+    if tools.compatibility_mode:
+        raise SkipTest
     check_concentrated_scale(filter_univariate=False)
 
 
 def test_concentrated_scale_univariate():
-    from statsmodels.tsa.statespace.tools import compatibility_mode
-    if compatibility_mode:
-        return
+    if tools.compatibility_mode:
+        raise SkipTest
     check_concentrated_scale(filter_univariate=True)
