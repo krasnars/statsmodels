@@ -501,7 +501,6 @@ class MLEModel(tsbase.TimeSeriesModel):
                 result_kwargs['cov_type'] = cov_type
             if cov_kwds is not None:
                 result_kwargs['cov_kwds'] = cov_kwds
-            result_kwargs['scale'] = result.scale
 
             if results_class is None:
                 results_class = MLEResults
@@ -562,7 +561,6 @@ class MLEModel(tsbase.TimeSeriesModel):
                 result_kwargs['cov_type'] = cov_type
             if cov_kwds is not None:
                 result_kwargs['cov_kwds'] = cov_kwds
-            result_kwargs['scale'] = result.scale
 
             if results_class is None:
                 results_class = MLEResults
@@ -1536,8 +1534,9 @@ class MLEResults(tsbase.TimeSeriesModelResults):
     statsmodels.tsa.statespace.representation.FrozenRepresentation
     """
     def __init__(self, model, params, results, cov_type='opg',
-                 cov_kwds=None, scale=1, **kwargs):
+                 cov_kwds=None, **kwargs):
         self.data = model.data
+        scale = results.scale
 
         tsbase.TimeSeriesModelResults.__init__(self, model, params,
                                                normalized_cov_params=None,
