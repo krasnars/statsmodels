@@ -1552,6 +1552,14 @@ class MLEResults(tsbase.TimeSeriesModelResults):
 
         # Dimensions
         self.nobs = model.nobs
+        self.nobs_effective = self.nobs - self.loglikelihood_burn
+
+        # Degrees of freedom
+        # Note that we include the scale as an estimated parameter even if
+        # it was concentrated out of the likelihood function.
+        self.df_model = (self.params.size +
+                         self.filter_results.filter_concentrated)
+        self.df_resid = self.nobs_effective - self.df_model
 
         # Setup covariance matrix notes dictionary
         if not hasattr(self, 'cov_kwds'):
@@ -1725,16 +1733,17 @@ class MLEResults(tsbase.TimeSeriesModelResults):
         """
         (float) Akaike Information Criterion
         """
-        # return -2*self.llf + 2*self.params.shape[0]
-        return aic(self.llf, self.nobs, self.params.shape[0])
+        # return -2 * self.llf + 2 * self.df_mdoel
+        return aic(self.llf, self.nobs_effective, self.df_model)
 
     @cache_readonly
     def bic(self):
         """
         (float) Bayes Information Criterion
         """
-        # return -2*self.llf + self.params.shape[0]*np.log(self.nobs)
-        return bic(self.llf, self.nobs, self.params.shape[0])
+        # return (-2 * self.llf +
+        #         self.df_model * np.log(self.nobs_effective))
+        return bic(self.llf, self.nobs_effective, self.df_model)
 
     def _cov_params_approx(self, approx_complex_step=True,
                            approx_centered=False):
@@ -1907,8 +1916,9 @@ class MLEResults(tsbase.TimeSeriesModelResults):
         """
         (float) Hannan-Quinn Information Criterion
         """
-        # return -2*self.llf + 2*np.log(np.log(self.nobs))*self.params.shape[0]
-        return hqic(self.llf, self.nobs, self.params.shape[0])
+        # return (-2 * self.llf +
+        #         2 * np.log(np.log(self.nobs_effective)) * self.df_model)
+        return hqic(self.llf, self.nobs_effective, self.df_model)
 
     @cache_readonly
     def llf_obs(self):
