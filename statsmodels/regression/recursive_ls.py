@@ -83,13 +83,13 @@ class RecursiveLS(MLEModel):
             endog, k_states=self.k_exog, exog=exog, **kwargs
         )
 
+        # Concentrate the scale out of the likelihood function
+        self.ssm.filter_concentrated = True
+
         # Setup the state space representation
         self['design'] = self.exog[:, :, None].T
-        self['transition'] = np.eye(self.k_states)
-
-        # Notice that the filter output does not depend on the measurement
-        # variance, so we set it here to 1
         self['obs_cov', 0, 0] = 1.
+        self['transition'] = np.eye(self.k_states)
 
     @classmethod
     def from_formula(cls, formula, data, subset=None):
@@ -106,17 +106,12 @@ class RecursiveLS(MLEModel):
         -------
         RecursiveLSResults
         """
-        # Get the smoother results with an arbitrary measurement variance
         smoother_results = self.smooth(return_ssm=True)
-        # Compute the MLE of sigma2 (see Harvey, 1989 equation 4.2.5)
-        resid = smoother_results.standardized_forecasts_error[0]
-        sigma2 = (np.inner(resid, resid) /
-                  (self.nobs - self.loglikelihood_burn))
 
-        # Now construct a results class, where the params are the final
-        # estimates of the regression coefficients
-        self['obs_cov', 0, 0] = sigma2
-        return self.smooth()
+        with self.ssm.fixed_scale(smoother_results.scale):
+            res = self.smooth()
+
+        return res
 
     def filter(self, return_ssm=False, **kwargs):
         # Get the state space output
